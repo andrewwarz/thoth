@@ -94,7 +94,16 @@ impl OllamaClient {
     pub async fn natural_to_command(&self, query: &str) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
         let os = get_os_name();
         let prompt = format!(
-            "/no_think You are a {} shell command generator. Output ONLY the complete command, nothing else. Use current directory (.) when path not specified.\n\nTask: {}\nCommand:",
+            r#"/no_think You are a {} shell command generator. Output ONLY the command, nothing else.
+
+Examples:
+- "disk space left" -> df -h
+- "find large files" -> find . -size +100M -type f
+- "what's using port 3000" -> lsof -i :3000
+- "list files" -> ls -la
+
+Task: {}
+Command:"#,
             os, query
         );
 
