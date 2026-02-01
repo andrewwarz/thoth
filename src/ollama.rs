@@ -53,6 +53,24 @@ struct GenerateResponse {
     response: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct TagsResponse {
+    models: Vec<ModelInfo>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+pub struct ModelInfo {
+    pub name: String,
+    pub size: u64,
+}
+
+impl ModelInfo {
+    pub fn size_human(&self) -> String {
+        let gb = self.size as f64 / 1_073_741_824.0;
+        format!("{:.1} GB", gb)
+    }
+}
+
 pub struct OllamaClient {
     client: Client,
     base_url: String,
@@ -124,6 +142,21 @@ impl OllamaClient {
             .to_string();
 
         Ok(command)
+    }
+
+    pub async fn list_models(base_url: &str) -> Result<Vec<ModelInfo>, Box<dyn std::error::Error + Send + Sync>> {
+        let client = Client::builder()
+            .timeout(Duration::from_secs(10))
+            .build()?;
+
+        let response = client
+            .get(format!("{}/api/tags", base_url))
+            .send()
+            .await?
+            .json::<TagsResponse>()
+            .await?;
+
+        Ok(response.models)
     }
 }
 

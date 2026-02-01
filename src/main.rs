@@ -1,32 +1,33 @@
-use thoth::ollama::OllamaClient;
+use dialoguer::{theme::ColorfulTheme, Input, Select};
 use std::env;
 use std::process::Command;
-
-const DEFAULT_MODEL: &str = "gemma3:latest";
-const DEFAULT_OLLAMA_URL: &str = "http://localhost:11434";
+use thoth::config::Config;
+use thoth::ollama::OllamaClient;
 
 #[tokio::main]
 async fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("Thoth - Natural language to shell commands");
-        eprintln!();
-        eprintln!("Usage: thoth <natural language query>");
-        eprintln!();
-        eprintln!("Examples:");
-        eprintln!("  thoth find all files larger than 10mb");
-        eprintln!("  thoth what is using port 3000");
-        eprintln!("  thoth show disk usage");
-        eprintln!("  thoth install htop");
+        print_usage();
         std::process::exit(1);
     }
 
-    let model = env::var("THOTH_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string());
-    let ollama_url = env::var("THOTH_OLLAMA_URL").unwrap_or_else(|_| DEFAULT_OLLAMA_URL.to_string());
+    if args[1] == "config" {
+        run_config().await;
+        return;
+    }
+
+    let config = match Config::load() {
+        Some(c) => c,
+        None => {
+            eprintln!("No config found. Run 'thoth config' to set up.");
+            std::process::exit(1);
+        }
+    };
 
     let query = args[1..].join(" ");
-    let client = OllamaClient::new(&ollama_url, &model);
+    let client = OllamaClient::new(&config.ollama_url, &config.model);
 
     match client.natural_to_command(&query).await {
         Ok(command) => {
@@ -47,6 +48,85 @@ async fn main() {
         }
         Err(e) => {
             eprintln!("Error: {}", e);
+            std::process::exit(1);
+        }
+    }
+}
+
+fn print_usage() {
+    eprintln!("Thoth - Natural language to shell commands");
+    eprintln!();
+    eprintln!("Usage: thoth <natural language query>");
+    eprintln!("       thoth config");
+    eprintln!();
+    eprintln!("Examples:");
+    eprintln!("  thoth find all files larger than 10mb");
+    eprintln!("  thoth what is using port 3000");
+    eprintln!("  thoth show disk usage");
+}
+
+async fn run_config() {
+    let theme = ColorfulTheme::default();
+
+    // Get current config or defaults
+    let current = Config::load().unwrap_or_default();
+
+    println!("Fetching models from Ollama...\n");
+
+    let models = match OllamaClient::list_models(&current.ollama_url).await {
+        Ok(m) if !m.is_empty() => m,
+        Ok(_) => {
+            eprintln!("No models found. Install one with: ollama pull gemma3");
+            std::process::exit(1);
+        }
+        Err(e) => {
+            eprintln!("Could not connect to Ollama at {}", current.ollama_url);
+            eprintln!("Error: {}", e);
+            eprintln!();
+            eprintln!("Make sure Ollama is running: ollama serve");
+            std::process::exit(1);
+        }
+    };
+
+    // Build selection items
+    let items: Vec<String> = models
+        .iter()
+        .map(|m| format!("{} ({})", m.name, m.size_human()))
+        .collect();
+
+    // Find current model index for default selection
+    let default_idx = models
+        .iter()
+        .position(|m| m.name == current.model)
+        .unwrap_or(0);
+
+    let selection = Select::with_theme(&theme)
+        .with_prompt("Select your model")
+        .items(&items)
+        .default(default_idx)
+        .interact()
+        .expect("Failed to get selection");
+
+    let selected_model = &models[selection];
+
+    let ollama_url: String = Input::with_theme(&theme)
+        .with_prompt("Ollama URL")
+        .default(current.ollama_url)
+        .interact_text()
+        .expect("Failed to get input");
+
+    let config = Config {
+        model: selected_model.name.clone(),
+        ollama_url,
+    };
+
+    match config.save() {
+        Ok(_) => {
+            let path = Config::path().unwrap();
+            println!("\n✓ Saved to {}", path.display());
+        }
+        Err(e) => {
+            eprintln!("Failed to save config: {}", e);
             std::process::exit(1);
         }
     }

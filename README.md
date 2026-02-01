@@ -66,7 +66,26 @@ cargo build --release
 cp target/release/thoth /usr/local/bin/
 ```
 
-### 4. Use it
+### 4. Configure
+
+```bash
+thoth config
+```
+
+Select your model from your installed Ollama models:
+
+```
+? Select your model:
+> gemma3:latest (2.3 GB)
+  llama3:latest (4.7 GB)
+  mistral:latest (4.1 GB)
+
+? Ollama URL [http://localhost:11434]:
+
+✓ Saved to ~/.config/thoth/config.toml
+```
+
+### 5. Use it
 
 ```bash
 thoth show disk usage
@@ -89,19 +108,18 @@ thoth compress this folder into a tar.gz
 
 ## Configuration
 
-Thoth works out of the box with sensible defaults.
+Run `thoth config` to configure your model and Ollama URL interactively.
 
-**Environment variables:**
+Config location:
+- **macOS:** `~/Library/Application Support/thoth/config.toml`
+- **Linux:** `~/.config/thoth/config.toml`
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `THOTH_MODEL` | `gemma3:latest` | Ollama model to use |
-| `THOTH_OLLAMA_URL` | `http://localhost:11434` | Ollama API endpoint |
-
-```bash
-# Use a different model
-THOTH_MODEL=llama3 thoth find hidden files
+```toml
+model = "gemma3:latest"
+ollama_url = "http://localhost:11434"
 ```
+
+To change models, just run `thoth config` again.
 
 ## How it works
 
