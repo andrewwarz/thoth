@@ -45,22 +45,22 @@ ollama pull gemma3
 
 ```bash
 # macOS (Apple Silicon)
-curl -L https://github.com/andrewwarz/thoth/releases/latest/download/thoth-macos-arm64 -o /usr/local/bin/thoth
+curl -L https://github.com/HopperShell/thoth/releases/latest/download/thoth-macos-arm64 -o /usr/local/bin/thoth
 chmod +x /usr/local/bin/thoth
 
 # macOS (Intel)
-curl -L https://github.com/andrewwarz/thoth/releases/latest/download/thoth-macos-x64 -o /usr/local/bin/thoth
+curl -L https://github.com/HopperShell/thoth/releases/latest/download/thoth-macos-x64 -o /usr/local/bin/thoth
 chmod +x /usr/local/bin/thoth
 
 # Linux (x64)
-curl -L https://github.com/andrewwarz/thoth/releases/latest/download/thoth-linux-x64 -o /usr/local/bin/thoth
+curl -L https://github.com/HopperShell/thoth/releases/latest/download/thoth-linux-x64 -o /usr/local/bin/thoth
 chmod +x /usr/local/bin/thoth
 ```
 
 **From source:**
 
 ```bash
-git clone https://github.com/andrewwarz/thoth
+git clone https://github.com/HopperShell/thoth
 cd thoth
 cargo build --release
 cp target/release/thoth /usr/local/bin/
